@@ -2,61 +2,79 @@ const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 
 const wss = new WebSocket.Server({ port: 8080 });
-const rooms = {};
 
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
-    const { type, payload } = JSON.parse(message);
+const rooms = {}; // roomCode: { question, options, votes, users, timer }
 
-    if (type === 'CREATE_ROOM') {
-      const roomId = uuidv4().slice(0, 6);
-      rooms[roomId] = { users: [], votes: {}, ended: false, timer: null };
-      ws.send(JSON.stringify({ type: 'ROOM_CREATED', payload: roomId }));
-    }
+wss.on('connection', ws => {
+  ws.on('message', message => {
+    const data = JSON.parse(message);
 
-    if (type === 'JOIN_ROOM') {
-      const { roomId, name } = payload;
-      if (rooms[roomId] && !rooms[roomId].ended) {
-        rooms[roomId].users.push({ ws, name });
-        ws.roomId = roomId;
-        ws.name = name;
+    switch (data.type) {
+      case 'CREATE_ROOM':
+        const roomCode = uuidv4().slice(0, 6);
+        rooms[roomCode] = {
+          question: 'Cats vs Dogs',
+          options: ['Cats', 'Dogs'],
+          votes: { Cats: 0, Dogs: 0 },
+          users: new Set(),
+          ended: false
+        };
 
-        if (!rooms[roomId].timer) {
-          rooms[roomId].timer = setTimeout(() => {
-            rooms[roomId].ended = true;
-            broadcast(roomId, { type: 'VOTING_ENDED' });
+        ws.send(JSON.stringify({ type: 'ROOM_CREATED', roomCode }));
+        break;
+
+      case 'JOIN_ROOM':
+        const room = rooms[data.roomCode];
+        if (room && !room.users.has(data.username)) {
+          room.users.add(data.username);
+          ws.roomCode = data.roomCode;
+          ws.username = data.username;
+          ws.send(JSON.stringify({
+            type: 'ROOM_JOINED',
+            question: room.question,
+            options: room.options,
+            votes: room.votes,
+            ended: room.ended
+          }));
+        } else {
+          ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid room or user already exists' }));
+        }
+        break;
+
+      case 'CAST_VOTE':
+        const currentRoom = rooms[ws.roomCode];
+        if (currentRoom && !currentRoom.ended) {
+          const voteKey = data.vote;
+          if (currentRoom.votes.hasOwnProperty(voteKey)) {
+            currentRoom.votes[voteKey]++;
+            broadcast(ws.roomCode, {
+              type: 'VOTE_UPDATE',
+              votes: currentRoom.votes
+            });
+          }
+        }
+        break;
+
+      case 'START_TIMER':
+        const timerRoom = rooms[data.roomCode];
+        if (timerRoom && !timerRoom.timerStarted) {
+          timerRoom.timerStarted = true;
+          setTimeout(() => {
+            timerRoom.ended = true;
+            broadcast(data.roomCode, { type: 'VOTING_ENDED' });
           }, 60000);
         }
-
-        broadcast(roomId, { type: 'USER_JOINED', payload: countVotes(rooms[roomId].votes) });
-      }
-    }
-
-    if (type === 'CAST_VOTE') {
-      const { roomId, option } = payload;
-      if (rooms[roomId] && !rooms[roomId].ended) {
-        rooms[roomId].votes[ws.name] = option;
-        const tally = countVotes(rooms[roomId].votes);
-        broadcast(roomId, { type: 'VOTE_UPDATE', payload: tally });
-      }
+        break;
     }
   });
 });
 
-function broadcast(roomId, message) {
-  const room = rooms[roomId];
-  if (room) {
-    room.users.forEach(({ ws }) => {
-      ws.send(JSON.stringify(message));
-    });
-  }
+function broadcast(roomCode, message) {
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN && client.roomCode === roomCode) {
+      client.send(JSON.stringify(message));
+    }
+  });
 }
 
-function countVotes(votes) {
-  return ['A', 'B'].reduce((acc, opt) => {
-    acc[opt] = Object.values(votes).filter(v => v === opt).length;
-    return acc;
-  }, { A: 0, B: 0 });
-}
-
-console.log('WebSocket server started on ws://localhost:8080');
+console.log('WebSocket server is running on ws://localhost:8080');
