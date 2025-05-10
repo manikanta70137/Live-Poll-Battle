@@ -1,43 +1,51 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-export default function JoinRoom() {
+const JoinRoom = ({ setRoomJoined, setRoomCode, setUsername, setSocket }) => {
   const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
-  const navigate = useNavigate();
+  const [code, setCode] = useState('');
 
-  const createRoom = async () => {
-    const socket = new WebSocket('ws://localhost:8080');
-    socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'CREATE_ROOM' }));
-      socket.onmessage = (msg) => {
-        const { type, payload } = JSON.parse(msg.data);
-        if (type === 'ROOM_CREATED') {
-          localStorage.setItem('name', name);
-          localStorage.setItem('roomId', payload);
-          navigate(`/room/${payload}`);
+  const connect = () => {
+    const ws = new WebSocket('ws://localhost:8080');
+    ws.onopen = () => {
+      setSocket(ws);
+      setUsername(name);
+
+      if (code) {
+        ws.send(JSON.stringify({ type: 'JOIN_ROOM', roomCode: code, username: name }));
+      } else {
+        ws.send(JSON.stringify({ type: 'CREATE_ROOM' }));
+      }
+
+      ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data);
+        if (data.type === 'ROOM_CREATED') {
+          setRoomCode(data.roomCode);
+          ws.send(JSON.stringify({ type: 'JOIN_ROOM', roomCode: data.roomCode, username: name }));
+        } else if (data.type === 'ROOM_JOINED') {
+          setRoomJoined(true);
+        } else if (data.type === 'ERROR') {
+          alert(data.message);
         }
       };
     };
   };
 
-  const joinRoom = () => {
-    localStorage.setItem('name', name);
-    localStorage.setItem('roomId', roomCode);
-    navigate(`/room/${roomCode}`);
-  };
-
   return (
     <div>
-      <h2>Live Poll Battle</h2>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your name" />
-      <div>
-        <button onClick={createRoom} disabled={!name}>Create Room</button>
-      </div>
-      <div>
-        <input value={roomCode} onChange={(e) => setRoomCode(e.target.value)} placeholder="Room Code" />
-        <button onClick={joinRoom} disabled={!name || !roomCode}>Join Room</button>
-      </div>
+      <h2>Join or Create a Poll Room</h2>
+      <input
+        placeholder="Enter your name"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
+      <input
+        placeholder="Room code (leave empty to create)"
+        value={code}
+        onChange={e => setCode(e.target.value)}
+      />
+      <button onClick={connect}>Join / Create</button>
     </div>
   );
-}
+};
+
+export default JoinRoom;
