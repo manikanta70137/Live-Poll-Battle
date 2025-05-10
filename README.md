@@ -36,3 +36,69 @@ A real-time poll application where users can join or create a poll room and vote
 ```bash
 git clone https://github.com/manikanta70137/Live-Poll-Battle.git
 cd Live-Poll-Battle
+Start Backend (WebSocket Server)
+bash
+Copy
+Edit
+cd server
+npm install
+node server.js
+The server runs on: ws://localhost:8080
+
+🌐 Start Frontend (React App)
+bash
+Copy
+Edit
+cd client
+npm install
+npm start
+The app opens at: http://localhost:3000
+
+🧠 Architecture Notes
+Each poll room is represented in memory using a UUID. When a user creates or joins a room, their socket is tracked, and their votes are stored within that room's state. WebSocket events handle:
+
+User joins
+
+Vote submissions
+
+Broadcasting real-time updates to other clients in the same room
+
+Votes are stored temporarily in the backend memory, and client-side localStorage ensures vote persistence through page refreshes.
+📦 Folder Structure:
+Live-Poll-Battle/
+├── client/        # React frontend
+│   └── src/
+│       └── components/
+├── server/        # NodeJS backend with WebSocket
+│   └── server.js
+└── README.md
+
+
+---
+
+## 📧 Email Draft for Submission
+
+```txt
+Subject: Submission - Live Poll Battle Assignment (Manikanta)
+
+Dear [Instructor's Name / Team],
+
+I hope you're doing well.
+
+I am submitting my completed assignment for the **Live Poll Battle** project. The application is built using ReactJS for the frontend and NodeJS with WebSockets for the backend. It meets all the core requirements, including real-time voting, room creation/joining, vote state persistence, and a countdown-based vote lock.
+
+🔗 GitHub Repository: https://github.com/manikanta70137/Live-Poll-Battle
+
+📄 Key Features:
+- Real-time vote updates using WebSockets
+- Room-based vote isolation
+- 60-second voting timer
+- Duplicate vote prevention with localStorage
+- Multi-user support
+
+Please find the README file in the repository for detailed setup instructions and architecture explanation.
+
+Let me know if any further details are needed.
+
+Best regards,  
+**Manikanta**  
