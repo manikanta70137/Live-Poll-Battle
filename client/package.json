@@ -1,15 +1,13 @@
 {
-  "name": "client",
+  "name": "live-poll-client",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
     "react-scripts": "5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build"
+    "start": "react-scripts start"
   }
 }
