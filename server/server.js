@@ -1,4 +1,3 @@
-// server/server.js
 const WebSocket = require('ws');
 const { v4: uuidv4 } = require('uuid');
 
@@ -7,8 +6,7 @@ const rooms = {};
 
 wss.on('connection', (ws) => {
   ws.on('message', (message) => {
-    const data = JSON.parse(message);
-    const { type, payload } = data;
+    const { type, payload } = JSON.parse(message);
 
     if (type === 'CREATE_ROOM') {
       const roomId = uuidv4().slice(0, 6);
@@ -30,10 +28,7 @@ wss.on('connection', (ws) => {
           }, 60000);
         }
 
-        broadcast(roomId, {
-          type: 'USER_JOINED',
-          payload: rooms[roomId].votes
-        });
+        broadcast(roomId, { type: 'USER_JOINED', payload: countVotes(rooms[roomId].votes) });
       }
     }
 
@@ -41,11 +36,8 @@ wss.on('connection', (ws) => {
       const { roomId, option } = payload;
       if (rooms[roomId] && !rooms[roomId].ended) {
         rooms[roomId].votes[ws.name] = option;
-        const voteCount = countVotes(rooms[roomId].votes);
-        broadcast(roomId, {
-          type: 'VOTE_UPDATE',
-          payload: voteCount
-        });
+        const tally = countVotes(rooms[roomId].votes);
+        broadcast(roomId, { type: 'VOTE_UPDATE', payload: tally });
       }
     }
   });
@@ -61,12 +53,10 @@ function broadcast(roomId, message) {
 }
 
 function countVotes(votes) {
-  const tally = { A: 0, B: 0 };
-  Object.values(votes).forEach(vote => {
-    tally[vote]++;
-  });
-  return tally;
+  return ['A', 'B'].reduce((acc, opt) => {
+    acc[opt] = Object.values(votes).filter(v => v === opt).length;
+    return acc;
+  }, { A: 0, B: 0 });
 }
 
-console.log("WebSocket server running on ws://localhost:8080");
-
+console.log('WebSocket server started on ws://localhost:8080');
