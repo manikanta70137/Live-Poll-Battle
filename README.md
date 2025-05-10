@@ -75,30 +75,12 @@ Live-Poll-Battle/
 
 
 ---
-
-## 📧 Email Draft for Submission
-
-```txt
-Subject: Submission - Live Poll Battle Assignment (Manikanta)
-
-Dear [Instructor's Name / Team],
-
-I hope you're doing well.
-
-I am submitting my completed assignment for the **Live Poll Battle** project. The application is built using ReactJS for the frontend and NodeJS with WebSockets for the backend. It meets all the core requirements, including real-time voting, room creation/joining, vote state persistence, and a countdown-based vote lock.
-
-🔗 GitHub Repository: https://github.com/manikanta70137/Live-Poll-Battle
-
 📄 Key Features:
 - Real-time vote updates using WebSockets
 - Room-based vote isolation
 - 60-second voting timer
 - Duplicate vote prevention with localStorage
 - Multi-user support
-
-Please find the README file in the repository for detailed setup instructions and architecture explanation.
-
-Let me know if any further details are needed.
 
 Best regards,  
 **Manikanta**  
